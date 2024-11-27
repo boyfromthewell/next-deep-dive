@@ -1,5 +1,5 @@
 import Image from "next/image";
-import * as styles from "./[id].css";
+import * as styles from "@/styles/[id].css";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import fetchOneBook from "@/lib/fetchOneBook";
 
