@@ -1,6 +1,6 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
-import GlobalLayout from "./components/globalLayout";
+import GlobalLayout from "../components/globalLayout";
 import { ReactNode } from "react";
 import { NextPage } from "next";
 

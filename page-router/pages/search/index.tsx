@@ -1,12 +1,16 @@
-import { useRouter } from "next/router";
+import books from "@/mock/books.json";
 import { ReactNode } from "react";
-import SearchableLayout from "../components/searchableLayout";
+import SearchableLayout from "../../components/searchableLayout";
+import BookItem from "@/components/bookItem";
 
 export default function Page() {
-  const router = useRouter();
-  const { q } = router.query;
-
-  return <div>search {q}</div>;
+  return (
+    <div>
+      {books.map((book) => (
+        <BookItem key={book.id} {...book} />
+      ))}
+    </div>
+  );
 }
 
 Page.getLayout = (page: ReactNode) => {
