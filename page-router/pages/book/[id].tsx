@@ -3,6 +3,7 @@ import * as styles from "@/styles/[id].css";
 import { GetStaticPropsContext, InferGetStaticPropsType } from "next";
 import fetchOneBook from "@/lib/fetchOneBook";
 import { useRouter } from "next/router";
+import Head from "next/head";
 
 export const getStaticPaths = () => {
   return {
@@ -49,25 +50,33 @@ export default function Page({
   const { title, subTitle, description, author, publisher, coverImgUrl } = book;
 
   return (
-    <div className={styles.container}>
-      <div
-        style={{ backgroundImage: `url('${coverImgUrl}')` }}
-        className={styles.coverImgContainer}
-      >
-        <Image
-          src={coverImgUrl}
-          alt="cover img"
-          className={styles.coverImg}
-          width={350}
-          height={300}
-        />
+    <>
+      <Head>
+        <title>{title}</title>
+        <meta property="og:image" content={coverImgUrl} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+      </Head>
+      <div className={styles.container}>
+        <div
+          style={{ backgroundImage: `url('${coverImgUrl}')` }}
+          className={styles.coverImgContainer}
+        >
+          <Image
+            src={coverImgUrl}
+            alt="cover img"
+            className={styles.coverImg}
+            width={350}
+            height={300}
+          />
+        </div>
+        <div className={styles.title}>{title}</div>
+        <div className={styles.subTitle}>{subTitle}</div>
+        <div className={styles.subTitle}>
+          {author} | {publisher}
+        </div>
+        <div className={styles.desc}>{description}</div>
       </div>
-      <div className={styles.title}>{title}</div>
-      <div className={styles.subTitle}>{subTitle}</div>
-      <div className={styles.subTitle}>
-        {author} | {publisher}
-      </div>
-      <div className={styles.desc}>{description}</div>
-    </div>
+    </>
   );
 }
