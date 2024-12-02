@@ -1,6 +1,12 @@
 .container {
   display: flex;
   flex-direction: column;
+  gap: 50px;
+}
+
+.container > section {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
