@@ -375,3 +375,185 @@ function ReviewEditor({ id }: { id: string }) {
 ```
 
 조금 더 간결하고 편리하게 서버측에서 실행되는 어떤 동작을 정의하는데 유용
+
+### 재검증 구현
+
+```tsx
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+export async function createReviewAction(formData: FormData) {
+  const bookId = formData.get("bookId")?.toString();
+  const content = formData.get("content")?.toString();
+  const author = formData.get("author")?.toString();
+
+  if (!bookId || !content || !author) return;
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_SERVER_URL}/review`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          content,
+          author,
+          bookId,
+        }),
+      }
+    );
+    revalidatePath(`/book/${bookId}`);
+  } catch (err) {
+    console.error(err);
+    return;
+  }
+}
+```
+
+- revalidatePath(): 인수로 전달한 경로에 해당하는 페이지를 재검증 (다시 생성)
+  - 서버 컴포넌트에서만 호출 가능
+  - 페이지를 전부 재검증하기 때문에 해당 되는 페이지의 자식 컴포넌트 등의 모든 캐시를 무효화 (다시 생성되기 때문에)
+  - 풀 라우트 캐시 무효화 되고 업데이트 안됨
+
+#### 그 외 재검증 방식
+
+1. 특정 주소의 해당하는 페이지만 재검증
+
+```tsx
+revalidatePath(`/book/${bookId}`);
+```
+
+2. 특정 경로의 모든 동적 페이지 재검증
+
+```tsx
+revalidatePath("/book/[id]", "page");
+```
+
+3. 특정 레이아웃을 갖는 모든 페이지 재검증
+
+```tsx
+revalidatePath("/(with-searchbar)", "layout");
+```
+
+4. 모든 데이터 재검증
+
+```tsx
+revalidatePath("/", "layout");
+```
+
+5. 태그 기준, 데이터 캐시 재검증
+
+```tsx
+// ...
+const res = await fetch(
+  `${process.env.NEXT_PUBLIC_API_SERVER_URL}/review/book/${bookId}`,
+  { next: { tags: [`reviews-${bookId}`] } }
+);
+```
+
+```tsx
+// ...
+revalidateTag(`reviews-${bookId}`);
+```
+
+### 클라이언트 컴포넌트 서버액션
+
+- useActionState hook: react 19에서 처음 도입
+  - 첫번째 인수: 핸들링 하려는 액션 함수
+  - 두번째 인수: 상태 초기값
+
+예제 코드
+
+```tsx
+"use server";
+
+import { revalidatePath, revalidateTag } from "next/cache";
+
+export async function createReviewAction(_: any, formData: FormData) {
+  const bookId = formData.get("bookId")?.toString();
+  const content = formData.get("content")?.toString();
+  const author = formData.get("author")?.toString();
+
+  if (!bookId || !content || !author)
+    return {
+      status: false,
+      error: "리뷰 내용과 작성자를 입력 해주세요.",
+    };
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_SERVER_URL}/review`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          content,
+          author,
+          bookId,
+        }),
+      }
+    );
+    if (!res.ok) {
+      throw new Error(res.statusText);
+    }
+    revalidateTag(`reviews-${bookId}`);
+    return {
+      status: true,
+      error: "",
+    };
+  } catch (err) {
+    return {
+      status: false,
+      error: `리뷰 저장에 실패했습니다. ${err}`,
+    };
+  }
+}
+```
+
+```tsx
+"use client";
+import style from "./review-editer.module.css";
+import { createReviewAction } from "@/actions/create-review.action";
+import { useActionState } from "react";
+
+export default function ReviewEditor({ id }: { id: string }) {
+  const [state, formAction, isPending] = useActionState(
+    createReviewAction,
+    null
+  );
+
+  useEffect(() => {
+    if (state && !state.status) {
+      alert(state.error);
+    }
+  }, [state]);
+
+  return (
+    <section className={style.form_container}>
+      <form action={formAction}>
+        <input name="bookId" value={id} hidden readOnly />
+        <textarea
+          disabled={isPending}
+          name="content"
+          placeholder="리뷰 내용"
+          required
+        />
+        <div className={style.submit_container}>
+          <input
+            disabled={isPending}
+            name="author"
+            placeholder="작성자"
+            required
+          />
+          <button disabled={isPending} type="submit">
+            {isPending ? "..." : "작성하기"}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+```
+
+- state: 서버 액션 수행 후 return 해준 state 값 담김
+- formAction: 서버 액션 실행 함수 = createReviewAction
+- isPending: 서버 액션 수행 중 = true
