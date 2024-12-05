@@ -557,3 +557,34 @@ export default function ReviewEditor({ id }: { id: string }) {
 - state: 서버 액션 수행 후 return 해준 state 값 담김
 - formAction: 서버 액션 실행 함수 = createReviewAction
 - isPending: 서버 액션 수행 중 = true
+
+### Parallel Route
+
+- 한 화면안에 여러 개 페이지를 병렬로 렌더링 시켜주는 패턴
+- slot 폴더 생성: 병렬로 렌더링 될 페이지 컴포넌트 보관하는 폴더 (ex. @sidebar)
+- 부모 레이아웃 파일에 props로 자동 전달 가능
+
+```tsx
+// ...
+import { ReactNode } from "react";
+
+export default function Layout({
+  children,
+  sidebar,
+}: {
+  children: ReactNode;
+  sidebar: ReactNode;
+}) {
+  return (
+    <div>
+      {sidebar}
+      {children}
+    </div>
+  );
+}
+```
+
+### Intercepting Route
+
+- rink, route (클라이언트 사이드 방식) 통해 접속한 경우에만 인터셉팅 라우트 적용
+- 가로채 보여줄 페이지를 (경로) 붙여 폴더 생성 ex) (.)book/[id], (..)book/[id]
